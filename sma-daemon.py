@@ -21,15 +21,15 @@
   
 import sys, time
 from daemon3x import daemon3x
-import smaem
+import smaemoncms
   
 class MyDaemon(daemon3x):
 	def run(self):
 		while True:
-			time.sleep(1)
+			time.sleep(5)
 			#print ("1")
 			#readem()
-			smaem.readem()
+			smaemoncms.readem()
   
 if __name__ == "__main__":
 	daemon = MyDaemon('/tmp/daemon-example.pid')

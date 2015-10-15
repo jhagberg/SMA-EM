@@ -23,10 +23,30 @@ import struct
 import binascii
 import signal
 import sys
+import httplib
+
 
 # listen to the broadcasts; SMA-Energymeter broadcasts is measurements to 239.12.255.254:9522
 MCAST_GRP = '239.12.255.254'
 MCAST_PORT = 9522
+
+#EMONCMS
+# Domain you want to post to: localhost would be an emoncms installation on your own laptop
+# this could be changed to emoncms.org to post to emoncms.org
+domain = "192.168.1.248"
+
+# Location of emoncms in your server, the standard setup is to place it in a folder called emoncms
+# To post to emoncms.org change this to blank: ""
+emoncmspath = "emoncms"
+
+# Write apikey of emoncms account
+apikey = "50f38492463b391c50becb4b933ed366"
+
+# Node id youd like the emontx to appear as
+nodeid = 1
+
+conn = httplib.HTTPConnection(domain)
+
 
 
 # function to transform HEX to DEC
@@ -56,23 +76,26 @@ def readem():
   
   # split the received message to seperate vars
   smaserial=hex2dec(smainfoasci[40:48])
-  pregard=hex2dec(smainfoasci[64:72])/10
-  psurplus=hex2dec(smainfoasci[104:112])/10
-  qregard=hex2dec(smainfoasci[144:152])/10
-  qsurplus=hex2dec(smainfoasci[184:192])/10
-  sregard=hex2dec(smainfoasci[224:232])/10
-  ssurplus=hex2dec(smainfoasci[264:272])/10
-  cosphi=hex2dec(smainfoasci[304:312])/1000
+  pregard=hex2dec(smainfoasci[64:72])/10.0
+  pregardcounter=hex2dec(smainfoasci[80:96])/3600000.0
+  psurplus=hex2dec(smainfoasci[104:112])/10.0
+  qregard=hex2dec(smainfoasci[144:152])/10.0
+  qsurplus=hex2dec(smainfoasci[184:192])/10.0
+  sregard=hex2dec(smainfoasci[224:232])/10.0
+  ssurplus=hex2dec(smainfoasci[264:272])/10.0
+  cosphi=hex2dec(smainfoasci[304:312])/1000.0
+  
+
   #L1
-  p1regard=hex2dec(smainfoasci[320:328])/10
-  p1surplus=hex2dec(smainfoasci[360:368])/10
-  q1regard=hex2dec(smainfoasci[400:408])/10
-  q1surplus=hex2dec(smainfoasci[440:448])/10
-  s1regard=hex2dec(smainfoasci[480:488])/10
-  s1surplus=hex2dec(smainfoasci[520:528])/10
-  thd1=hex2dec(smainfoasci[560:568])/1000
-  v1=hex2dec(smainfoasci[576:584])/1000
-  cosphi1=hex2dec(smainfoasci[592:600])/1000
+  p1regard=hex2dec(smainfoasci[320:328])/10.0
+  p1surplus=hex2dec(smainfoasci[360:368])/10.0
+  q1regard=hex2dec(smainfoasci[400:408])/10.0
+  q1surplus=hex2dec(smainfoasci[440:448])/10.0
+  s1regard=hex2dec(smainfoasci[480:488])/10.0
+  s1surplus=hex2dec(smainfoasci[520:528])/10.0
+  thd1=hex2dec(smainfoasci[560:568])/1000.0
+  v1=hex2dec(smainfoasci[576:584])/1000.0
+  cosphi1=hex2dec(smainfoasci[592:600])/1000.0
   #L2
   p2regard=hex2dec(smainfoasci[608:616])/10
   p2surplus=hex2dec(smainfoasci[648:656])/10
@@ -94,40 +117,13 @@ def readem():
   v3=hex2dec(smainfoasci[1152:1160])/1000
   cosphi3=hex2dec(smainfoasci[1168:1176])/1000
   #
-  # Output...
-  #/run/shm/em-regard
-  file = open("/run/shm/em-regard", "w")
-  file.write('%.2f' % pregard)
-  file.close()
-  #/run/shm/em-surplus
-  file = open("/run/shm/em-surplus", "w")
-  file.write('%.2f' % psurplus)
-  file.close()
-  # don't know what P,Q and S means: 
-  # http://en.wikipedia.org/wiki/AC_power or http://de.wikipedia.org/wiki/Scheinleistung
-  # thd = Total_Harmonic_Distortion http://de.wikipedia.org/wiki/Total_Harmonic_Distortion
-  # cos phi is always positive, no matter what quadrant 
-  '''  print ('\n')
-  print ('SMA-EM Serial:{}'.format(smaserial))
-  print ('NOTE: I\'m not sure about the direction of Q (cap. ind.)')
-  print ('----sum----')
-  print ('P: regard:{}W  surplus:{}W'.format(pregard,psurplus))
-  print ('S: regard:{}VA surplus:{}VA'.format(sregard,ssurplus))
-  print ('Q: cap {}VAr ind {}VAr'.format(qregard,qsurplus))
-  print ('cos phi:{}°'.format(cosphi))
-  print ('----L1----')
-  print ('P: regard:{}W  surplus:{}W'.format(p1regard,p1surplus))
-  print ('S: regard:{}VA surplus:{}VA'.format(s1regard,s1surplus))
-  print ('Q: cap {}VAr ind {}VAr'.format(q1regard,q1surplus))
-  print ('U: {}V thd:{}% cos phi:{}°'.format(v1,thd1,cosphi1))
-  print ('----L2----')
-  print ('P: regard:{}W  surplus:{}W'.format(p2regard,p2surplus))
-  print ('S: regard:{}VA surplus:{}VA'.format(s2regard,s2surplus))
-  print ('Q: cap {}VAr ind {}VAr'.format(q2regard,q2surplus))
-  print ('U: {}V thd:{}% cos phi:{}°'.format(v2,thd2,cosphi2))
-  print ('----L3----')
-  print ('P: regard:{}W  surplus:{}W'.format(p3regard,p3surplus))
-  print ('S: regard:{}VA surplus:{}VA'.format(s3regard,s3surplus))
-  print ('Q: cap {}VAr ind {}VAr'.format(q3regard,q3surplus))
-  print ('U: {}V thd:{}% cos phi:{}°'.format(v3,thd3,cosphi3))
-  '''
+
+# Send to emoncms
+  json='{house_power:' + str(pregard) +',import_kwh:' + str(pregardcounter) + ',house_export:' + str(psurplus) + '}'
+  print json
+  print pregard
+  print str(pregard)
+  conn.request("GET", "/input/post.json?apikey="+apikey+"&node="+str(nodeid)+"&json="+json)
+  response = conn.getresponse()
+  conn.close()
+  #print response.read()
