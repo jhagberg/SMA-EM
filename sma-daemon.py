@@ -32,7 +32,7 @@ class MyDaemon(daemon3x):
 			smaemoncms.readem()
   
 if __name__ == "__main__":
-	daemon = MyDaemon('/tmp/daemon-example.pid')
+	daemon = MyDaemon('/var/run/sma-em.pid')
 	if len(sys.argv) == 2:
 		if 'start' == sys.argv[1]:
 			daemon.start()

@@ -24,7 +24,7 @@ import binascii
 import signal
 import sys
 import httplib
-
+import json
 
 # listen to the broadcasts; SMA-Energymeter broadcasts is measurements to 239.12.255.254:9522
 MCAST_GRP = '239.12.255.254'
@@ -33,14 +33,14 @@ MCAST_PORT = 9522
 #EMONCMS
 # Domain you want to post to: localhost would be an emoncms installation on your own laptop
 # this could be changed to emoncms.org to post to emoncms.org
-domain = "192.168.1.248"
+domain = "192.168.1.219"
 
 # Location of emoncms in your server, the standard setup is to place it in a folder called emoncms
 # To post to emoncms.org change this to blank: ""
 emoncmspath = "emoncms"
 
 # Write apikey of emoncms account
-apikey = "50f38492463b391c50becb4b933ed366"
+apikey = "789a1c8bd4b6eb0137961ac1d49f1aa4"
 
 # Node id youd like the emontx to appear as
 nodeid = 1
@@ -97,33 +97,47 @@ def readem():
   v1=hex2dec(smainfoasci[576:584])/1000.0
   cosphi1=hex2dec(smainfoasci[592:600])/1000.0
   #L2
-  p2regard=hex2dec(smainfoasci[608:616])/10
-  p2surplus=hex2dec(smainfoasci[648:656])/10
-  q2regard=hex2dec(smainfoasci[688:696])/10
-  q2surplus=hex2dec(smainfoasci[728:736])/10
-  s2regard=hex2dec(smainfoasci[768:776])/10
-  s2surplus=hex2dec(smainfoasci[808:816])/10
-  thd2=hex2dec(smainfoasci[848:856])/1000
-  v2=hex2dec(smainfoasci[864:872])/1000
+  p2regard=hex2dec(smainfoasci[608:616])/10.0
+  p2surplus=hex2dec(smainfoasci[648:656])/10.0
+  q2regard=hex2dec(smainfoasci[688:696])/10.0
+  q2surplus=hex2dec(smainfoasci[728:736])/10.0
+  s2regard=hex2dec(smainfoasci[768:776])/10.0
+  s2surplus=hex2dec(smainfoasci[808:816])/10.0
+  thd2=hex2dec(smainfoasci[848:856])/1000.0
+  v2=hex2dec(smainfoasci[864:872])/1000.0
   cosphi2=hex2dec(smainfoasci[880:888])/1000
   #L3
-  p3regard=hex2dec(smainfoasci[896:904])/10
-  p3surplus=hex2dec(smainfoasci[936:944])/10
-  q3regard=hex2dec(smainfoasci[976:984])/10
-  q3surplus=hex2dec(smainfoasci[1016:1024])/10
-  s3regard=hex2dec(smainfoasci[1056:1064])/10
-  s3surplus=hex2dec(smainfoasci[1096:1104])/10
-  thd3=hex2dec(smainfoasci[1136:1144])/1000
-  v3=hex2dec(smainfoasci[1152:1160])/1000
-  cosphi3=hex2dec(smainfoasci[1168:1176])/1000
+  p3regard=hex2dec(smainfoasci[896:904])/10.0
+  p3surplus=hex2dec(smainfoasci[936:944])/10.0
+  q3regard=hex2dec(smainfoasci[976:984])/10.0
+  q3surplus=hex2dec(smainfoasci[1016:1024])/10.0
+  s3regard=hex2dec(smainfoasci[1056:1064])/10.0
+  s3surplus=hex2dec(smainfoasci[1096:1104])/10.0
+  thd3=hex2dec(smainfoasci[1136:1144])/1000.0
+  v3=hex2dec(smainfoasci[1152:1160])/1000.0
+  cosphi3=hex2dec(smainfoasci[1168:1176])/1000.0
   #
 
 # Send to emoncms
-  json='{house_power:' + str(pregard) +',import_kwh:' + str(pregardcounter) + ',house_export:' + str(psurplus) + '}'
-  print json
-  print pregard
-  print str(pregard)
-  conn.request("GET", "/input/post.json?apikey="+apikey+"&node="+str(nodeid)+"&json="+json)
+  data={
+       "house_power" : pregard,
+       "import_kwh"  : pregardcounter,
+       "house_export": psurplus,
+       "L1_import"   : p1regard,
+       "L1_export"   : p1surplus,
+       "L2_import"   : p2regard,
+       "L2_export"   : p2surplus,
+       "L3_import"   : p3regard,
+       "L3_export"   : p3surplus
+
+        }
+  jsonstring=json.dumps(data,separators=(',', ':'))
+  
+  print jsonstring
+ # print pregard
+ # print str(pregard)
+  deg= "/input/post.json?apikey="+apikey+"&node="+str(nodeid)+"&json="+str(jsonstring)
+  conn.request("GET", deg)
   response = conn.getresponse()
   conn.close()
-  #print response.read()
+#  print response.read()
